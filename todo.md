@@ -66,4 +66,4 @@
 
 - [x] Dynamic speaker order based on joined participants (skip empty positions)
 
-- [ ] Redesign frontend to match competitor's visual style (color scheme, layout, decorations)
+- [x] Redesign frontend to match competitor's visual style (color scheme, layout, decorations)

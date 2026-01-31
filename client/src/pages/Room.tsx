@@ -1,6 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
@@ -11,7 +10,6 @@ import {
   ArrowLeft, 
   Copy, 
   Check,
-  Users,
   Play,
   LogOut,
   Crown,
@@ -47,7 +45,7 @@ export default function Room() {
     { roomCode },
     { 
       enabled: !!roomCode,
-      refetchInterval: 3000, // Poll every 3 seconds for updates
+      refetchInterval: 3000,
     }
   );
 
@@ -92,13 +90,11 @@ export default function Room() {
     },
   });
 
-  // Check if current user is in the room
   const currentParticipant = roomData?.participants.find(p => p.userId === user?.id);
   const isCreator = roomData?.room.creatorId === user?.id;
   const allReady = roomData?.participants && roomData.participants.length >= 1 && 
     roomData.participants.every(p => p.isReady);
 
-  // Redirect to debate if already in progress
   useEffect(() => {
     if (roomData?.room.status === "in_progress") {
       navigate(`/debate/${roomCode}`);
@@ -110,8 +106,8 @@ export default function Room() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-foreground border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -123,28 +119,30 @@ export default function Room() {
 
   if (error || !roomData) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container flex h-16 items-center gap-4">
+      <div className="min-h-screen bg-background text-foreground">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b-4 border-foreground">
+          <div className="container flex items-center gap-6 h-20">
             <Link href="/lobby">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="brutalist-border">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="font-semibold text-lg">Room Not Found</h1>
+            <span className="text-2xl font-black tracking-tighter uppercase">
+              [ROOM NOT FOUND]
+            </span>
           </div>
-        </header>
-        <main className="container py-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground mb-4">
-                The room with code <strong>{roomCode}</strong> was not found or has been closed.
-              </p>
-              <Link href="/lobby">
-                <Button>Back to Lobby</Button>
-              </Link>
-            </CardContent>
-          </Card>
+        </nav>
+        <main className="container pt-28 pb-12">
+          <div className="brutalist-border brutalist-shadow p-12 max-w-md mx-auto text-center">
+            <p className="text-xl mb-6">
+              Room <span className="font-mono font-black">{roomCode}</span> not found.
+            </p>
+            <Link href="/lobby">
+              <Button className="brutalist-border brutalist-shadow-hover uppercase font-black">
+                Back to Lobby
+              </Button>
+            </Link>
+          </div>
         </main>
       </div>
     );
@@ -202,72 +200,61 @@ export default function Room() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b-4 border-foreground">
+        <div className="container flex items-center justify-between h-20">
+          <div className="flex items-center gap-6">
             <Link href="/lobby">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="brutalist-border">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div>
-              <h1 className="font-semibold text-lg">Debate Room</h1>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm">{roomCode}</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopyCode}>
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                </Button>
-              </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-black tracking-tighter uppercase">
+                [ROOM]
+              </span>
+              <span className="font-mono font-black text-3xl">{roomCode}</span>
+              <Button variant="ghost" size="icon" onClick={handleCopyCode} className="brutalist-border h-10 w-10">
+                {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+              </Button>
             </div>
           </div>
-          <Badge variant={room.status === "waiting" ? "secondary" : "default"}>
-            {room.status === "waiting" ? "Waiting for players" : room.status}
+          <Badge className="brutalist-border uppercase font-black px-4 py-2 text-sm">
+            {room.status === "waiting" ? "Waiting" : room.status}
           </Badge>
         </div>
-      </header>
+      </nav>
 
-      <main className="container py-8">
+      <main className="container pt-28 pb-12">
+        {/* Motion */}
+        <div className="brutalist-border brutalist-shadow p-8 mb-8">
+          <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4">Motion</h2>
+          {motion ? (
+            <div className="space-y-4">
+              <p className="text-2xl md:text-3xl font-black uppercase">{motion.motion}</p>
+              <p className="text-muted-foreground leading-relaxed">{motion.backgroundContext}</p>
+              {motion.keyStakeholders && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {(motion.keyStakeholders as string[]).map((s, i) => (
+                    <Badge key={i} className="brutalist-border uppercase font-bold">{s}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No motion set. Room creator needs to generate one.</p>
+          )}
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Motion Card */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Motion</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {motion ? (
-                  <div className="space-y-3">
-                    <p className="text-xl font-semibold">{motion.motion}</p>
-                    <p className="text-muted-foreground">{motion.backgroundContext}</p>
-                    {motion.keyStakeholders && (
-                      <div className="flex flex-wrap gap-2">
-                        {(motion.keyStakeholders as string[]).map((s, i) => (
-                          <Badge key={i} variant="outline">{s}</Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No motion set yet. The room creator needs to generate one.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Government Team */}
-          <Card className="border-2 border-blue-500/30">
-            <CardHeader className="bg-blue-500/10">
-              <CardTitle className="flex items-center gap-2 text-blue-600">
-                <Users className="w-5 h-5" />
-                Government (Proposition)
-              </CardTitle>
-              <CardDescription>
-                {participants.filter(p => p.team === "government").length}/3 speakers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
+          <div className="brutalist-border brutalist-shadow">
+            <div className="p-6 team-gov">
+              <h3 className="text-xl font-black uppercase tracking-tight">Government</h3>
+              <p className="text-sm opacity-80">{participants.filter(p => p.team === "government").length}/3 speakers</p>
+            </div>
+            <div className="p-6 space-y-4">
               {SPEAKER_ROLES.government.map((role) => {
                 const participant = participants.find(
                   p => p.team === "government" && p.speakerRole === role.id
@@ -275,48 +262,39 @@ export default function Room() {
                 return (
                   <div
                     key={role.id}
-                    className={`p-3 rounded-lg border ${
-                      participant ? "bg-blue-500/5 border-blue-500/30" : "border-dashed"
+                    className={`p-4 border-2 ${
+                      participant ? "border-foreground bg-muted/30" : "border-dashed border-muted-foreground/30"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{role.label}</p>
-                        {participant ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm">{participant.user?.name || "Unknown"}</span>
-                            {participant.userId === room.creatorId && (
-                              <Crown className="w-3 h-3 text-yellow-500" />
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Empty</p>
-                        )}
-                      </div>
-                      {participant && (
-                        <Badge variant={participant.isReady ? "default" : "secondary"}>
+                    <p className="font-black uppercase text-sm">{role.label}</p>
+                    {participant ? (
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{participant.user?.name || "Unknown"}</span>
+                          {participant.userId === room.creatorId && (
+                            <Crown className="w-4 h-4" />
+                          )}
+                        </div>
+                        <Badge className={`uppercase font-bold text-xs ${participant.isReady ? "team-gov" : ""}`}>
                           {participant.isReady ? "Ready" : "Not Ready"}
                         </Badge>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Empty</p>
+                    )}
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Opposition Team */}
-          <Card className="border-2 border-red-500/30">
-            <CardHeader className="bg-red-500/10">
-              <CardTitle className="flex items-center gap-2 text-red-600">
-                <Users className="w-5 h-5" />
-                Opposition
-              </CardTitle>
-              <CardDescription>
-                {participants.filter(p => p.team === "opposition").length}/3 speakers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
+          <div className="brutalist-border brutalist-shadow">
+            <div className="p-6 team-opp">
+              <h3 className="text-xl font-black uppercase tracking-tight">Opposition</h3>
+              <p className="text-sm opacity-80">{participants.filter(p => p.team === "opposition").length}/3 speakers</p>
+            </div>
+            <div className="p-6 space-y-4">
               {SPEAKER_ROLES.opposition.map((role) => {
                 const participant = participants.find(
                   p => p.team === "opposition" && p.speakerRole === role.id
@@ -324,172 +302,151 @@ export default function Room() {
                 return (
                   <div
                     key={role.id}
-                    className={`p-3 rounded-lg border ${
-                      participant ? "bg-red-500/5 border-red-500/30" : "border-dashed"
+                    className={`p-4 border-2 ${
+                      participant ? "border-foreground bg-muted/30" : "border-dashed border-muted-foreground/30"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{role.label}</p>
-                        {participant ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm">{participant.user?.name || "Unknown"}</span>
-                            {participant.userId === room.creatorId && (
-                              <Crown className="w-3 h-3 text-yellow-500" />
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Empty</p>
-                        )}
-                      </div>
-                      {participant && (
-                        <Badge variant={participant.isReady ? "default" : "secondary"}>
+                    <p className="font-black uppercase text-sm">{role.label}</p>
+                    {participant ? (
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{participant.user?.name || "Unknown"}</span>
+                          {participant.userId === room.creatorId && (
+                            <Crown className="w-4 h-4" />
+                          )}
+                        </div>
+                        <Badge className={`uppercase font-bold text-xs ${participant.isReady ? "team-opp" : ""}`}>
                           {participant.isReady ? "Ready" : "Not Ready"}
                         </Badge>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Empty</p>
+                    )}
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Actions Panel */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!currentParticipant ? (
-                <>
+          <div className="brutalist-border brutalist-shadow p-6">
+            <h3 className="text-xl font-black uppercase tracking-tight mb-6">Your Actions</h3>
+            
+            {!currentParticipant ? (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-black uppercase">Select Team</label>
+                  <Select 
+                    value={selectedTeam || ""} 
+                    onValueChange={(v) => {
+                      setSelectedTeam(v as "government" | "opposition");
+                      setSelectedRole(null);
+                    }}
+                  >
+                    <SelectTrigger className="brutalist-border h-14 font-bold">
+                      <SelectValue placeholder="Choose team" />
+                    </SelectTrigger>
+                    <SelectContent className="brutalist-border">
+                      <SelectItem value="government" className="font-bold">Government</SelectItem>
+                      <SelectItem value="opposition" className="font-bold">Opposition</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedTeam && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Select Team</label>
-                    <Select 
-                      value={selectedTeam || ""} 
-                      onValueChange={(v) => {
-                        setSelectedTeam(v as "government" | "opposition");
-                        setSelectedRole(null);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a team" />
+                    <label className="text-sm font-black uppercase">Select Role</label>
+                    <Select value={selectedRole || ""} onValueChange={setSelectedRole}>
+                      <SelectTrigger className="brutalist-border h-14 font-bold">
+                        <SelectValue placeholder="Choose role" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="government">
-                          <span className="text-blue-600">Government (Proposition)</span>
-                        </SelectItem>
-                        <SelectItem value="opposition">
-                          <span className="text-red-600">Opposition</span>
-                        </SelectItem>
+                      <SelectContent className="brutalist-border">
+                        {getAvailableRoles(selectedTeam).map((role) => (
+                          <SelectItem key={role.id} value={role.id} className="font-medium">
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                        {getAvailableRoles(selectedTeam).length === 0 && (
+                          <div className="p-3 text-sm text-muted-foreground">All roles taken</div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
+                )}
 
-                  {selectedTeam && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Select Role</label>
-                      <Select value={selectedRole || ""} onValueChange={setSelectedRole}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableRoles(selectedTeam).map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                          {getAvailableRoles(selectedTeam).length === 0 && (
-                            <div className="p-2 text-sm text-muted-foreground">
-                              All roles taken
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <Button 
+                  onClick={handleJoin}
+                  disabled={!selectedTeam || !selectedRole || joinRoom.isPending}
+                  className="w-full brutalist-border brutalist-shadow-hover uppercase font-black h-14"
+                >
+                  {joinRoom.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Join Room"
                   )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="brutalist-border p-4 bg-muted/30">
+                  <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Your Position</p>
+                  <p className="font-black text-lg uppercase">
+                    {getRoleLabel(currentParticipant.speakerRole)}
+                  </p>
+                  <Badge className={`mt-2 uppercase font-bold ${currentParticipant.team === "government" ? "team-gov" : "team-opp"}`}>
+                    {currentParticipant.team}
+                  </Badge>
+                </div>
 
-                  <Button 
-                    onClick={handleJoin}
-                    disabled={!selectedTeam || !selectedRole || joinRoom.isPending}
-                    className="w-full"
+                <Button
+                  onClick={handleToggleReady}
+                  variant={currentParticipant.isReady ? "outline" : "default"}
+                  className="w-full brutalist-border uppercase font-black h-14"
+                  disabled={setReady.isPending}
+                >
+                  {currentParticipant.isReady ? "Cancel Ready" : "Ready Up"}
+                </Button>
+
+                <Button
+                  onClick={handleLeave}
+                  variant="outline"
+                  className="w-full brutalist-border uppercase font-black h-14"
+                  disabled={leaveRoom.isPending}
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Leave Room
+                </Button>
+
+                {isCreator && (
+                  <Button
+                    onClick={handleStart}
+                    disabled={!allReady || !motion || startDebate.isPending}
+                    className="w-full brutalist-border brutalist-shadow-hover uppercase font-black h-14"
                   >
-                    {joinRoom.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    {startDebate.isPending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      "Join Room"
+                      <>
+                        <Play className="w-5 h-5 mr-2" />
+                        Start Debate
+                      </>
                     )}
                   </Button>
-                </>
-              ) : (
-                <>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Your Position</p>
-                    <p className="font-medium">
-                      {getRoleLabel(currentParticipant.speakerRole)}
-                    </p>
-                    <Badge 
-                      variant="outline" 
-                      className={currentParticipant.team === "government" ? "text-blue-600" : "text-red-600"}
-                    >
-                      {currentParticipant.team === "government" ? "Government" : "Opposition"}
-                    </Badge>
-                  </div>
+                )}
 
-                  <Button
-                    onClick={handleToggleReady}
-                    variant={currentParticipant.isReady ? "secondary" : "default"}
-                    className="w-full"
-                    disabled={setReady.isPending}
-                  >
-                    {currentParticipant.isReady ? "Cancel Ready" : "Ready Up"}
-                  </Button>
-
-                  <Button
-                    onClick={handleLeave}
-                    variant="outline"
-                    className="w-full"
-                    disabled={leaveRoom.isPending}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Leave Room
-                  </Button>
-
-                  {isCreator && (
-                    <Button
-                      onClick={handleStart}
-                      disabled={!allReady || !motion || startDebate.isPending}
-                      className="w-full"
-                    >
-                      {startDebate.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-2" />
-                          Start Debate
-                        </>
-                      )}
-                    </Button>
-                  )}
-
-                  {!allReady && participants.length >= 1 && (
-                    <p className="text-xs text-center text-muted-foreground">
-                      Waiting for all participants to ready up...
-                    </p>
-                  )}
-                  {participants.length < 6 && participants.length >= 1 && allReady && (
-                    <p className="text-xs text-center text-muted-foreground">
-                      {6 - participants.length} position(s) still open (optional)
-                    </p>
-                  )}
-                  {participants.length === 0 && (
-                    <p className="text-xs text-center text-muted-foreground">
-                      Join the room to get started
-                    </p>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                {!allReady && participants.length >= 1 && (
+                  <p className="text-xs text-center text-muted-foreground uppercase">
+                    Waiting for all to ready up...
+                  </p>
+                )}
+                {participants.length < 6 && participants.length >= 1 && allReady && (
+                  <p className="text-xs text-center text-muted-foreground uppercase">
+                    {6 - participants.length} position(s) open (optional)
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
