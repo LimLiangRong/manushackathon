@@ -216,10 +216,40 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "All participants must be ready" });
         }
         
+        // Find the first speaker who has actually joined
+        const participantRoles = new Set(participants.map(p => p.speakerRole));
+        const fullSpeakingOrder = ASIAN_PARLIAMENTARY_FORMAT.speakingOrder;
+        let firstSpeakerIndex = 0;
+        
+        for (let i = 0; i < fullSpeakingOrder.length; i++) {
+          const speaker = fullSpeakingOrder[i];
+          const role = speaker.role;
+          // For reply speeches, check if the original speaker is present
+          if (role === "opposition_reply") {
+            if (participantRoles.has("leader_of_opposition")) {
+              firstSpeakerIndex = i;
+              break;
+            }
+            continue;
+          }
+          if (role === "government_reply") {
+            if (participantRoles.has("prime_minister")) {
+              firstSpeakerIndex = i;
+              break;
+            }
+            continue;
+          }
+          // Regular speaker roles
+          if (participantRoles.has(role as typeof participants[number]["speakerRole"])) {
+            firstSpeakerIndex = i;
+            break;
+          }
+        }
+        
         await db.updateDebateRoom(input.roomId, {
           status: "in_progress",
           currentPhase: "debate",
-          currentSpeakerIndex: 0,
+          currentSpeakerIndex: firstSpeakerIndex,
           startedAt: new Date(),
         });
         
@@ -234,10 +264,29 @@ export const appRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Room not found" });
         }
         
-        const nextIndex = (room.currentSpeakerIndex || 0) + 1;
-        const totalSpeeches = ASIAN_PARLIAMENTARY_FORMAT.speakingOrder.length;
+        // Get participants to determine which speakers are present
+        const participants = await db.getRoomParticipants(room.id);
+        const participantRoles = new Set(participants.map(p => p.speakerRole));
         
-        if (nextIndex >= totalSpeeches) {
+        // Build dynamic speaking order based on who joined
+        const fullSpeakingOrder = ASIAN_PARLIAMENTARY_FORMAT.speakingOrder;
+        const activeSpeakingOrder = fullSpeakingOrder.filter(speaker => {
+          // For reply speeches, check if the original speaker is present
+          if (speaker.role === "opposition_reply") {
+            return participantRoles.has("leader_of_opposition");
+          }
+          if (speaker.role === "government_reply") {
+            return participantRoles.has("prime_minister");
+          }
+          return participantRoles.has(speaker.role);
+        });
+        
+        // Find current position in active order and move to next
+        const currentSpeaker = fullSpeakingOrder[room.currentSpeakerIndex || 0];
+        const currentActiveIndex = activeSpeakingOrder.findIndex(s => s.role === currentSpeaker?.role);
+        const nextActiveIndex = currentActiveIndex + 1;
+        
+        if (nextActiveIndex >= activeSpeakingOrder.length) {
           // Debate is complete
           await db.updateDebateRoom(input.roomId, {
             currentPhase: "feedback",
@@ -247,8 +296,12 @@ export const appRouter = router({
           return { completed: true, nextSpeakerIndex: null };
         }
         
-        await db.updateDebateRoom(input.roomId, { currentSpeakerIndex: nextIndex });
-        return { completed: false, nextSpeakerIndex: nextIndex };
+        // Find the index in the full speaking order for the next active speaker
+        const nextSpeaker = activeSpeakingOrder[nextActiveIndex];
+        const nextFullIndex = fullSpeakingOrder.findIndex(s => s.role === nextSpeaker.role);
+        
+        await db.updateDebateRoom(input.roomId, { currentSpeakerIndex: nextFullIndex });
+        return { completed: false, nextSpeakerIndex: nextFullIndex };
       }),
   }),
 

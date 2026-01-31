@@ -492,6 +492,16 @@ describe("speaker advancement", () => {
       endedAt: null,
     });
     
+    // Mock participants - all 6 speakers present
+    vi.mocked(db.getRoomParticipants).mockResolvedValue([
+      { id: 1, roomId: 1, userId: 1, team: "government", speakerRole: "prime_minister", isReady: true, joinedAt: new Date() },
+      { id: 2, roomId: 1, userId: 2, team: "opposition", speakerRole: "leader_of_opposition", isReady: true, joinedAt: new Date() },
+      { id: 3, roomId: 1, userId: 3, team: "government", speakerRole: "deputy_prime_minister", isReady: true, joinedAt: new Date() },
+      { id: 4, roomId: 1, userId: 4, team: "opposition", speakerRole: "deputy_leader_of_opposition", isReady: true, joinedAt: new Date() },
+      { id: 5, roomId: 1, userId: 5, team: "government", speakerRole: "government_whip", isReady: true, joinedAt: new Date() },
+      { id: 6, roomId: 1, userId: 6, team: "opposition", speakerRole: "opposition_whip", isReady: true, joinedAt: new Date() },
+    ]);
+    
     const result = await caller.room.advanceSpeaker({ roomId: 1 });
     
     expect(result.completed).toBe(false);
@@ -511,13 +521,23 @@ describe("speaker advancement", () => {
       format: "asian_parliamentary",
       status: "in_progress",
       currentPhase: "debate",
-      currentSpeakerIndex: 7, // Last speaker (8 total, 0-indexed)
+      currentSpeakerIndex: 7, // Last speaker (government_reply, 0-indexed)
       motionId: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
       startedAt: new Date(),
       endedAt: null,
     });
+    
+    // Mock participants - all 6 speakers present (reply speeches use PM and LO)
+    vi.mocked(db.getRoomParticipants).mockResolvedValue([
+      { id: 1, roomId: 1, userId: 1, team: "government", speakerRole: "prime_minister", isReady: true, joinedAt: new Date() },
+      { id: 2, roomId: 1, userId: 2, team: "opposition", speakerRole: "leader_of_opposition", isReady: true, joinedAt: new Date() },
+      { id: 3, roomId: 1, userId: 3, team: "government", speakerRole: "deputy_prime_minister", isReady: true, joinedAt: new Date() },
+      { id: 4, roomId: 1, userId: 4, team: "opposition", speakerRole: "deputy_leader_of_opposition", isReady: true, joinedAt: new Date() },
+      { id: 5, roomId: 1, userId: 5, team: "government", speakerRole: "government_whip", isReady: true, joinedAt: new Date() },
+      { id: 6, roomId: 1, userId: 6, team: "opposition", speakerRole: "opposition_whip", isReady: true, joinedAt: new Date() },
+    ]);
     
     const result = await caller.room.advanceSpeaker({ roomId: 1 });
     

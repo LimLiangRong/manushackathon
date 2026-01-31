@@ -102,6 +102,19 @@ export default function Debate() {
 
   const currentSpeakerIndex = roomData?.room.currentSpeakerIndex || 0;
   const currentSpeaker = SPEAKING_ORDER[currentSpeakerIndex];
+  
+  // Build active speaking order based on who joined
+  const participantRoles = new Set(roomData?.participants.map(p => p.speakerRole) || []);
+  const activeSpeakingOrder = SPEAKING_ORDER.filter(speaker => {
+    if (speaker.role === "opposition_reply") {
+      return participantRoles.has("leader_of_opposition");
+    }
+    if (speaker.role === "government_reply") {
+      return participantRoles.has("prime_minister");
+    }
+    return participantRoles.has(speaker.role as any);
+  });
+  
   const currentParticipant = roomData?.participants.find(
     p => p.speakerRole === currentSpeaker?.role || 
          (currentSpeaker?.role === "opposition_reply" && p.speakerRole === "leader_of_opposition") ||
@@ -423,7 +436,7 @@ export default function Debate() {
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="font-mono">{roomCode}</Badge>
             <span className="text-sm text-muted-foreground">
-              Speech {currentSpeakerIndex + 1} of {SPEAKING_ORDER.length}
+              Speech {activeSpeakingOrder.findIndex(s => s.role === currentSpeaker?.role) + 1} of {activeSpeakingOrder.length}
             </span>
             {isSpeaking && (
               <Badge variant="secondary" className="gap-1">
@@ -647,14 +660,16 @@ export default function Debate() {
                 <CardTitle className="text-sm">Speaking Order</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {SPEAKING_ORDER.map((speaker, index) => {
+                {activeSpeakingOrder.map((speaker, activeIndex) => {
                   const participant = participants.find(
                     p => p.speakerRole === speaker.role ||
                          (speaker.role === "opposition_reply" && p.speakerRole === "leader_of_opposition") ||
                          (speaker.role === "government_reply" && p.speakerRole === "prime_minister")
                   );
-                  const isCurrent = index === currentSpeakerIndex;
-                  const isPast = index < currentSpeakerIndex;
+                  const fullIndex = SPEAKING_ORDER.findIndex(s => s.role === speaker.role);
+                  const isCurrent = fullIndex === currentSpeakerIndex;
+                  const currentActiveIndex = activeSpeakingOrder.findIndex(s => s.role === currentSpeaker?.role);
+                  const isPast = activeIndex < currentActiveIndex;
                   
                   return (
                     <div

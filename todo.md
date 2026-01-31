@@ -63,3 +63,5 @@
 - [x] Implement microphone audio capture for speech input
 - [x] Add speech-to-text transcription using Whisper API
 - [x] Add AI moderator text-to-speech announcements
+
+- [x] Dynamic speaker order based on joined participants (skip empty positions)
