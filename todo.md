@@ -77,3 +77,5 @@
 - [x] Fix audio recording cutting off after first few seconds - ensure continuous recording and transcription
 
 - [x] Fix audio recording cutting off - ensure entire speech is recorded and transcribed until stop button pressed
+
+- [x] Fix transcript system to properly record and transcribe each player's full argument live throughout their turn

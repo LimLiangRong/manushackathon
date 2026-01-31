@@ -462,17 +462,80 @@ Respond with a JSON object containing:
         // Decode base64 audio
         const audioBuffer = Buffer.from(input.audioData, 'base64');
         
+        // Check minimum audio size (at least 1KB for valid audio)
+        if (audioBuffer.length < 1000) {
+          console.log('[Transcription] Audio too small:', audioBuffer.length, 'bytes');
+          return { 
+            transcript: '',
+            segments: [],
+          };
+        }
+        
+        console.log('[Transcription] Processing audio:', audioBuffer.length, 'bytes');
+        
         // Upload to S3
         const { storagePut } = await import('./storage');
         const fileName = `audio/${input.speechId}/${Date.now()}.webm`;
-        const { url: audioUrl } = await storagePut(fileName, audioBuffer, 'audio/webm');
+        let audioUrl: string;
         
-        // Transcribe
-        const result = await transcribeAudio({
-          audioUrl,
-          language: "en",
-          prompt: "Transcribe this debate speech. Focus on clarity and accuracy.",
-        });
+        try {
+          const uploadResult = await storagePut(fileName, audioBuffer, 'audio/webm');
+          audioUrl = uploadResult.url;
+          console.log('[Transcription] Uploaded to:', audioUrl);
+        } catch (uploadError) {
+          console.error('[Transcription] Upload failed:', uploadError);
+          return { 
+            transcript: '',
+            segments: [],
+          };
+        }
+        
+        // Wait for S3 propagation (important for newly uploaded files)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verify URL is accessible before transcription (with retry)
+        let urlAccessible = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const checkResponse = await fetch(audioUrl, { method: 'HEAD' });
+            if (checkResponse.ok) {
+              urlAccessible = true;
+              console.log('[Transcription] URL accessible on attempt', attempt + 1);
+              break;
+            }
+          } catch (e) {
+            console.log('[Transcription] URL check failed, attempt', attempt + 1);
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        if (!urlAccessible) {
+          console.error('[Transcription] URL not accessible after retries:', audioUrl);
+          return { 
+            transcript: '',
+            segments: [],
+          };
+        }
+        
+        // Transcribe with retry
+        let result: Awaited<ReturnType<typeof transcribeAudio>> | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          result = await transcribeAudio({
+            audioUrl,
+            language: "en",
+            prompt: "Transcribe this debate speech clearly and accurately.",
+          });
+          
+          if (!('error' in result)) {
+            break;
+          }
+          console.log('[Transcription] Attempt', attempt + 1, 'failed:', result.error);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        if (!result) {
+          return { transcript: '', segments: [] };
+        }
         
         // Check if it's an error response
         if ('error' in result) {

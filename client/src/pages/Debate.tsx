@@ -493,22 +493,22 @@ export default function Debate() {
           console.log("[Recording] MediaRecorder stopped, total chunks:", audioChunksRef.current.length);
         };
         
-        // Start recording with shorter timeslice for more frequent data
-        // Using 3 seconds to get more responsive transcription
-        mediaRecorder.start(3000);
-        console.log("[Recording] Started with 3s timeslice");
+        // Start recording with 10 second timeslice for substantial audio chunks
+        // Longer chunks = better transcription quality
+        mediaRecorder.start(10000);
+        console.log("[Recording] Started with 10s timeslice");
         setIsRecording(true);
         setIsMicActive(true);
         
-        // Set up interval to process chunks every 10 seconds
-        // This batches multiple 3s chunks together for more efficient transcription
+        // Set up interval to process chunks every 15 seconds
+        // This ensures we have at least one full chunk before processing
         transcriptionIntervalRef.current = setInterval(() => {
           const unprocessedCount = audioChunksRef.current.length - processedIndexRef.current;
           console.log("[Recording] Interval tick, unprocessed chunks:", unprocessedCount, "AI speaking:", isSpeakingRef.current);
           if (unprocessedCount > 0 && !isSpeakingRef.current && !isProcessingRef.current) {
             processAudioChunk(false);
           }
-        }, 10000); // Process every 10 seconds
+        }, 15000); // Process every 15 seconds
         
         toast.success("Recording started - speak clearly into your microphone");
       } catch (err) {
