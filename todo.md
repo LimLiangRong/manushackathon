@@ -79,3 +79,6 @@
 - [x] Fix audio recording cutting off - ensure entire speech is recorded and transcribed until stop button pressed
 
 - [x] Fix transcript system to properly record and transcribe each player's full argument live throughout their turn
+
+- [x] Debug and fix live transcription - ensure it works in real-time as users speak
+- [x] Write tests for transcription functionality
